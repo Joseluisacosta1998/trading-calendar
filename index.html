@@ -1,0 +1,1280 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Lighter Trading Calendar</title>
+<link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Syne:wght@400;600;700;800&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/@emailjs/browser@4/dist/email.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+<style>
+  :root {
+    --bg: #0a0d13;
+    --bg2: #111520;
+    --bg3: #161c28;
+    --card: #1a2030;
+    --card2: #1f2840;
+    --border: #2a3550;
+    --accent: #00e5c3;
+    --accent2: #00bfa5;
+    --red: #ff4d6d;
+    --red2: #c9184a;
+    --green: #00e5c3;
+    --yellow: #ffd166;
+    --text: #e8eaf0;
+    --text2: #8892a4;
+    --text3: #5a6478;
+    --font-main: 'Syne', sans-serif;
+    --font-mono: 'Space Mono', monospace;
+  }
+  * { margin:0; padding:0; box-sizing:border-box; }
+  body { background:var(--bg); color:var(--text); font-family:var(--font-main); min-height:100vh; overflow-x:hidden; }
+
+  /* ── SCROLLBAR ── */
+  ::-webkit-scrollbar { width:5px; }
+  ::-webkit-scrollbar-track { background:var(--bg2); }
+  ::-webkit-scrollbar-thumb { background:var(--border); border-radius:3px; }
+
+  /* ── LOGIN ── */
+  #loginScreen {
+    position:fixed; inset:0; background:var(--bg);
+    display:flex; align-items:center; justify-content:center; z-index:1000;
+  }
+  .login-box {
+    background:var(--bg2); border:1px solid var(--border); border-radius:20px;
+    padding:48px 40px; width:100%; max-width:420px; text-align:center;
+    box-shadow:0 30px 80px rgba(0,229,195,0.08);
+  }
+  .login-logo {
+    width:60px; height:60px; background:var(--accent); border-radius:14px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:26px; color:var(--bg); margin:0 auto 20px;
+  }
+  .login-box h1 { font-size:22px; font-weight:800; margin-bottom:4px; }
+  .login-box p { color:var(--text2); font-size:13px; margin-bottom:32px; }
+  .input-group { position:relative; margin-bottom:16px; }
+  .input-group input {
+    width:100%; padding:14px 16px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:12px; color:var(--text); font-family:var(--font-main); font-size:14px;
+    outline:none; transition:border 0.2s;
+  }
+  .input-group input:focus { border-color:var(--accent); }
+  .input-group input::placeholder { color:var(--text3); }
+  .btn-primary {
+    width:100%; padding:14px; background:var(--accent); color:var(--bg);
+    border:none; border-radius:12px; font-family:var(--font-main); font-size:15px;
+    font-weight:700; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-primary:hover { background:var(--accent2); transform:translateY(-1px); }
+  .btn-primary:disabled { opacity:0.5; cursor:not-allowed; transform:none; }
+  .verify-note { font-size:12px; color:var(--text2); margin-top:12px; }
+  .code-inputs { display:flex; gap:8px; justify-content:center; margin:16px 0; }
+  .code-inputs input {
+    width:44px; height:52px; text-align:center; font-size:20px; font-weight:700;
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    color:var(--text); font-family:var(--font-mono); outline:none;
+  }
+  .code-inputs input:focus { border-color:var(--accent); }
+  .emailjs-note {
+    background:rgba(0,229,195,0.05); border:1px solid rgba(0,229,195,0.2);
+    border-radius:10px; padding:12px; font-size:11px; color:var(--text2);
+    margin-top:16px; text-align:left; line-height:1.6;
+  }
+  .emailjs-note b { color:var(--accent); }
+  #loginError { color:var(--red); font-size:12px; margin-top:8px; }
+
+  /* ── MAIN APP ── */
+  #app { display:none; min-height:100vh; }
+
+  /* ── HEADER ── */
+  .header {
+    background:var(--bg2); border-bottom:1px solid var(--border);
+    padding:0 20px; height:64px; display:flex; align-items:center; justify-content:space-between;
+    position:sticky; top:0; z-index:100;
+  }
+  .header-left { display:flex; align-items:center; gap:12px; }
+  .header-logo {
+    width:38px; height:38px; background:var(--accent); border-radius:9px;
+    display:flex; align-items:center; justify-content:center;
+    font-weight:800; font-size:16px; color:var(--bg);
+  }
+  .header-title { font-size:15px; font-weight:700; }
+  .header-sub { font-size:11px; color:var(--text2); font-family:var(--font-mono); }
+  .header-right { display:flex; align-items:center; gap:10px; }
+  .badge-demo {
+    background:rgba(255,209,102,0.15); border:1px solid var(--yellow);
+    color:var(--yellow); font-size:11px; font-weight:700; padding:4px 10px;
+    border-radius:6px; font-family:var(--font-mono);
+  }
+  .btn-sm {
+    padding:7px 14px; border-radius:8px; font-size:12px; font-weight:600;
+    font-family:var(--font-main); cursor:pointer; border:none; transition:all 0.2s;
+  }
+  .btn-outline {
+    background:transparent; border:1px solid var(--border); color:var(--text2);
+  }
+  .btn-outline:hover { border-color:var(--accent); color:var(--accent); }
+  .btn-danger { background:rgba(255,77,109,0.15); color:var(--red); border:1px solid var(--red2); }
+  .btn-danger:hover { background:rgba(255,77,109,0.25); }
+  .user-info { font-size:12px; color:var(--text2); }
+
+  /* ── LAYOUT ── */
+  .main-content { max-width:900px; margin:0 auto; padding:20px 16px 80px; }
+
+  /* ── STATS CARDS ── */
+  .stats-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; margin-bottom:16px; }
+  .stat-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px;
+    padding:16px 18px;
+  }
+  .stat-label { font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text2); margin-bottom:6px; text-transform:uppercase; }
+  .stat-value { font-size:24px; font-weight:800; font-family:var(--font-mono); }
+  .stat-sub { font-size:11px; color:var(--text2); margin-top:4px; }
+  .green { color:var(--green); }
+  .red { color:var(--red); }
+  .yellow { color:var(--yellow); }
+
+  /* ── CALENDAR HEADER ── */
+  .cal-nav {
+    display:flex; align-items:center; justify-content:space-between;
+    margin-bottom:14px; flex-wrap:wrap; gap:8px;
+  }
+  .cal-nav-center { display:flex; align-items:center; gap:10px; }
+  .btn-nav {
+    width:34px; height:34px; background:var(--card); border:1px solid var(--border);
+    border-radius:8px; color:var(--text); cursor:pointer; font-size:14px;
+    display:flex; align-items:center; justify-content:center; transition:all 0.2s;
+  }
+  .btn-nav:hover { border-color:var(--accent); color:var(--accent); }
+  .cal-month { font-size:16px; font-weight:700; min-width:140px; text-align:center; }
+  .cal-actions { display:flex; gap:8px; }
+
+  /* ── CALENDAR GRID ── */
+  .cal-grid { display:grid; grid-template-columns:repeat(7,1fr); gap:3px; }
+  .cal-header-cell {
+    text-align:center; font-size:10px; font-weight:700; letter-spacing:1px;
+    color:var(--text3); padding:8px 0; text-transform:uppercase;
+  }
+  .cal-cell {
+    background:var(--card); border:1px solid var(--border); border-radius:10px;
+    min-height:70px; padding:8px 7px; cursor:pointer; transition:all 0.2s;
+    position:relative; overflow:hidden;
+  }
+  .cal-cell:hover { border-color:var(--accent); transform:scale(1.02); z-index:2; }
+  .cal-cell.empty { background:transparent; border-color:transparent; cursor:default; }
+  .cal-cell.empty:hover { transform:none; }
+  .cal-cell.today { border-color:var(--accent); box-shadow:0 0 12px rgba(0,229,195,0.15); }
+  .cal-cell.gain-high { background:rgba(0,229,195,0.12); border-color:rgba(0,229,195,0.3); }
+  .cal-cell.gain-low  { background:rgba(0,229,195,0.05); border-color:rgba(0,229,195,0.15); }
+  .cal-cell.loss-high { background:rgba(255,77,109,0.12); border-color:rgba(255,77,109,0.3); }
+  .cal-cell.loss-low  { background:rgba(255,77,109,0.05); border-color:rgba(255,77,109,0.15); }
+  .cell-day { font-size:11px; font-weight:700; color:var(--text2); margin-bottom:4px; }
+  .cell-pnl { font-size:11px; font-weight:700; font-family:var(--font-mono); line-height:1.2; }
+  .cell-trades { font-size:10px; color:var(--text3); margin-top:3px; }
+
+  /* ── LEGEND ── */
+  .legend { display:flex; gap:14px; flex-wrap:wrap; margin-top:12px; }
+  .legend-item { display:flex; align-items:center; gap:6px; font-size:11px; color:var(--text2); }
+  .legend-dot { width:10px; height:10px; border-radius:3px; }
+
+  /* ── SECTION TITLE ── */
+  .section-title {
+    font-size:12px; font-weight:700; letter-spacing:1.5px; color:var(--text2);
+    text-transform:uppercase; margin:24px 0 12px;
+    display:flex; align-items:center; gap:8px;
+  }
+  .section-title::after { content:''; flex:1; height:1px; background:var(--border); }
+
+  /* ── BALANCE SECTION ── */
+  .balance-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;
+  }
+  .balance-top { display:flex; align-items:flex-start; justify-content:space-between; margin-bottom:16px; flex-wrap:wrap; gap:12px; }
+  .balance-main .label { font-size:10px; font-weight:700; letter-spacing:1.5px; color:var(--text2); text-transform:uppercase; margin-bottom:4px; }
+  .balance-main .value { font-size:32px; font-weight:800; font-family:var(--font-mono); color:var(--accent); }
+  .balance-metrics { display:flex; gap:16px; flex-wrap:wrap; }
+  .bm { text-align:right; }
+  .bm .label { font-size:10px; color:var(--text3); text-transform:uppercase; letter-spacing:1px; }
+  .bm .value { font-size:14px; font-weight:700; font-family:var(--font-mono); }
+  .balance-chart-wrap { height:120px; margin-top:8px; }
+
+  /* ── DRAWDOWN ── */
+  .drawdown-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:20px;
+    margin-top:12px;
+  }
+  .dd-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:16px; flex-wrap:wrap; gap:8px; }
+  .dd-title { font-size:13px; font-weight:700; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+  .dd-value { font-size:22px; font-weight:800; font-family:var(--font-mono); }
+  .dd-bar-wrap { background:var(--bg3); border-radius:6px; height:8px; overflow:hidden; margin-top:8px; }
+  .dd-bar { height:100%; border-radius:6px; background:linear-gradient(90deg,var(--red2),var(--red)); transition:width 0.5s; }
+
+  /* ── TRANSACTIONS ── */
+  .tx-grid { display:grid; grid-template-columns:1fr 1fr; gap:12px; }
+  .tx-card {
+    background:var(--card); border:1px solid var(--border); border-radius:14px; padding:18px;
+  }
+  .tx-card h3 { font-size:12px; font-weight:700; letter-spacing:1px; text-transform:uppercase; margin-bottom:14px; }
+  .tx-card h3.dep { color:var(--green); }
+  .tx-card h3.wit { color:var(--red); }
+  .tx-form { display:flex; flex-direction:column; gap:8px; }
+  .tx-input {
+    padding:10px 12px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:9px; color:var(--text); font-family:var(--font-mono); font-size:13px; outline:none;
+  }
+  .tx-input:focus { border-color:var(--accent); }
+  .btn-tx {
+    padding:10px; border-radius:9px; font-family:var(--font-main); font-size:13px;
+    font-weight:700; cursor:pointer; border:none; transition:all 0.2s;
+  }
+  .btn-dep { background:rgba(0,229,195,0.15); color:var(--green); border:1px solid rgba(0,229,195,0.3); }
+  .btn-dep:hover { background:rgba(0,229,195,0.25); }
+  .btn-wit { background:rgba(255,77,109,0.15); color:var(--red); border:1px solid rgba(255,77,109,0.3); }
+  .btn-wit:hover { background:rgba(255,77,109,0.25); }
+  .tx-history { max-height:140px; overflow-y:auto; margin-top:10px; }
+  .tx-item {
+    display:flex; justify-content:space-between; align-items:center;
+    padding:7px 0; border-bottom:1px solid var(--border); font-size:12px;
+  }
+  .tx-item:last-child { border-bottom:none; }
+  .tx-item .tx-date { color:var(--text3); font-family:var(--font-mono); }
+  .tx-item .tx-amount { font-family:var(--font-mono); font-weight:700; }
+  .tx-item .tx-commission { font-size:10px; color:var(--text3); }
+
+  /* ── DAY MODAL ── */
+  .modal-overlay {
+    position:fixed; inset:0; background:rgba(0,0,0,0.7); z-index:200;
+    display:flex; align-items:center; justify-content:center; padding:16px;
+    backdrop-filter:blur(4px);
+  }
+  .modal {
+    background:var(--bg2); border:1px solid var(--border); border-radius:20px;
+    width:100%; max-width:480px; max-height:90vh; overflow-y:auto;
+    padding:24px; box-shadow:0 40px 100px rgba(0,0,0,0.5);
+  }
+  .modal-header { display:flex; justify-content:space-between; align-items:center; margin-bottom:20px; }
+  .modal-header h2 { font-size:18px; font-weight:800; }
+  .modal-close {
+    width:32px; height:32px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:8px; cursor:pointer; font-size:16px; color:var(--text2);
+    display:flex; align-items:center; justify-content:center;
+  }
+  .modal-close:hover { color:var(--red); border-color:var(--red); }
+  .modal-pnl { font-size:36px; font-weight:800; font-family:var(--font-mono); margin-bottom:20px; }
+  .modal-stats { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:20px; }
+  .modal-stat { background:var(--bg3); border-radius:10px; padding:12px; }
+  .modal-stat .ms-label { font-size:10px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; margin-bottom:4px; }
+  .modal-stat .ms-value { font-size:16px; font-weight:700; font-family:var(--font-mono); }
+
+  /* ── TRADE FORM ── */
+  .trade-form { display:grid; grid-template-columns:1fr 1fr; gap:10px; margin-bottom:16px; }
+  .form-group { display:flex; flex-direction:column; gap:5px; }
+  .form-group label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+  .form-group select, .form-group input {
+    padding:10px 12px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:9px; color:var(--text); font-family:var(--font-mono); font-size:13px; outline:none;
+  }
+  .form-group select:focus, .form-group input:focus { border-color:var(--accent); }
+  .form-group select option { background:var(--bg2); }
+  .btn-add-trade {
+    width:100%; padding:12px; background:rgba(0,229,195,0.12); color:var(--accent);
+    border:1px dashed rgba(0,229,195,0.4); border-radius:10px; font-family:var(--font-main);
+    font-size:14px; font-weight:700; cursor:pointer; transition:all 0.2s;
+  }
+  .btn-add-trade:hover { background:rgba(0,229,195,0.2); }
+
+  /* ── TRADES LIST ── */
+  .trades-list { display:flex; flex-direction:column; gap:8px; margin-top:16px; }
+  .trade-item {
+    background:var(--bg3); border:1px solid var(--border); border-radius:10px;
+    padding:12px 14px; display:flex; justify-content:space-between; align-items:center;
+  }
+  .trade-left .pair { font-size:14px; font-weight:700; }
+  .trade-left .dir {
+    font-size:11px; font-weight:700; letter-spacing:1px;
+    margin-top:2px; font-family:var(--font-mono);
+  }
+  .dir.long { color:var(--green); }
+  .dir.short { color:var(--red); }
+  .trade-right { text-align:right; }
+  .trade-right .pnl { font-size:15px; font-weight:700; font-family:var(--font-mono); }
+  .trade-right .meta { font-size:11px; color:var(--text3); margin-top:2px; font-family:var(--font-mono); }
+  .btn-del-trade {
+    background:none; border:none; color:var(--text3); cursor:pointer;
+    font-size:14px; padding:4px 8px; border-radius:6px; transition:all 0.2s;
+  }
+  .btn-del-trade:hover { color:var(--red); background:rgba(255,77,109,0.1); }
+
+  /* ── TOAST ── */
+  #toast {
+    position:fixed; bottom:24px; left:50%; transform:translateX(-50%) translateY(20px);
+    background:var(--card2); border:1px solid var(--border); border-radius:10px;
+    padding:12px 20px; font-size:13px; color:var(--text); z-index:999;
+    opacity:0; transition:all 0.3s; pointer-events:none; white-space:nowrap;
+  }
+  #toast.show { opacity:1; transform:translateX(-50%) translateY(0); }
+
+  /* ── SETTINGS MODAL ── */
+  .settings-row { display:flex; flex-direction:column; gap:8px; margin-bottom:16px; }
+  .settings-row label { font-size:11px; color:var(--text2); text-transform:uppercase; letter-spacing:1px; }
+  .settings-row input {
+    padding:11px 14px; background:var(--bg3); border:1px solid var(--border);
+    border-radius:9px; color:var(--text); font-family:var(--font-mono); font-size:13px; outline:none;
+  }
+  .settings-row input:focus { border-color:var(--accent); }
+
+  /* ── RESPONSIVE ── */
+  @media(max-width:520px) {
+    .stats-grid { grid-template-columns:1fr 1fr; }
+    .tx-grid { grid-template-columns:1fr; }
+    .trade-form { grid-template-columns:1fr; }
+    .cal-cell { min-height:52px; padding:5px 4px; }
+    .cell-pnl { font-size:9px; }
+    .header { padding:0 12px; }
+    .header-title { font-size:13px; }
+    .stat-value { font-size:18px; }
+  }
+</style>
+</head>
+<body>
+
+<!-- ══ LOGIN SCREEN ══ -->
+<div id="loginScreen">
+  <div class="login-box">
+    <div class="login-logo">L</div>
+    <h1>Lighter Trading</h1>
+    <p>Inicia sesión con tu Gmail para continuar</p>
+
+    <div id="stepEmail">
+      <div class="input-group">
+        <input type="email" id="loginEmail" placeholder="tucorreo@gmail.com" />
+      </div>
+      <button class="btn-primary" onclick="sendCode()">Enviar código de verificación</button>
+      <div class="emailjs-note">
+        <b>⚙ Configuración EmailJS requerida:</b><br>
+        1. Crea cuenta en <b>emailjs.com</b><br>
+        2. Añade tu Service ID, Template ID y Public Key abajo:<br><br>
+        <div style="display:flex;flex-direction:column;gap:6px;margin-top:6px;">
+          <input type="text" id="ejsService" placeholder="Service ID (ej: service_xxx)" style="padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;outline:none;">
+          <input type="text" id="ejsTemplate" placeholder="Template ID (ej: template_xxx)" style="padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;outline:none;">
+          <input type="text" id="ejsPublicKey" placeholder="Public Key (ej: abc123xyz)" style="padding:7px 10px;background:var(--bg3);border:1px solid var(--border);border-radius:7px;color:var(--text);font-family:var(--font-mono);font-size:11px;outline:none;">
+        </div>
+        <div style="margin-top:8px;font-size:10px;color:var(--text3);">El template debe tener: <b>{{to_email}}</b> y <b>{{code}}</b></div>
+      </div>
+      <div id="loginError"></div>
+    </div>
+
+    <div id="stepCode" style="display:none;">
+      <p style="margin-bottom:16px;color:var(--text2);font-size:13px;">Introduce el código de 6 dígitos enviado a <span id="codeEmail" style="color:var(--accent);"></span></p>
+      <div class="code-inputs">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,0)" onkeydown="moveToPrev(event,this)">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,1)" onkeydown="moveToPrev(event,this)">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,2)" onkeydown="moveToPrev(event,this)">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,3)" onkeydown="moveToPrev(event,this)">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,4)" onkeydown="moveToPrev(event,this)">
+        <input type="text" maxlength="1" class="code-digit" oninput="moveToNext(this,5)" onkeydown="moveToPrev(event,this)">
+      </div>
+      <button class="btn-primary" onclick="verifyCode()">Verificar</button>
+      <p class="verify-note" style="margin-top:10px;">
+        <a href="#" onclick="resendCode()" style="color:var(--accent);text-decoration:none;">Reenviar código</a>
+      </p>
+      <div id="loginError2"></div>
+    </div>
+  </div>
+</div>
+
+<!-- ══ MAIN APP ══ -->
+<div id="app">
+  <div class="header">
+    <div class="header-left">
+      <div class="header-logo">L</div>
+      <div>
+        <div class="header-title">LIGHTER</div>
+        <div class="header-sub">TRADING CALENDAR</div>
+      </div>
+    </div>
+    <div class="header-right">
+      <span class="badge-demo">DEMO</span>
+      <span class="user-info" id="headerEmail"></span>
+      <button class="btn-sm btn-outline" onclick="openSettings()">⚙ Config</button>
+      <button class="btn-sm" style="background:rgba(255,77,109,0.1);color:var(--text3);border:1px solid var(--border);font-size:11px;" onclick="resetAllData()" title="Borrar todos los datos">🗑</button>
+      <button class="btn-sm btn-danger" onclick="logout()">Salir</button>
+    </div>
+  </div>
+
+  <div class="main-content">
+
+    <!-- STATS -->
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-label">PNL del Mes</div>
+        <div class="stat-value" id="statPnl">+$0.00</div>
+        <div class="stat-sub" id="statDays">0 días con actividad</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-label">Win Rate</div>
+        <div class="stat-value" id="statWinRate">0%</div>
+        <div class="stat-sub" id="statWinDays">0 de 0 días</div>
+      </div>
+    </div>
+
+    <!-- CALENDAR -->
+    <div class="cal-nav">
+      <div class="cal-nav-center">
+        <button class="btn-nav" onclick="changeMonth(-1)">&#8249;</button>
+        <div class="cal-month" id="calTitle">Mayo 2026</div>
+        <button class="btn-nav" onclick="changeMonth(1)">&#8250;</button>
+      </div>
+      <div class="cal-actions">
+        <span style="display:flex;align-items:center;gap:6px;font-size:12px;color:var(--text2);">
+          <span style="width:8px;height:8px;background:var(--green);border-radius:50%;display:inline-block;"></span>DEMO
+        </span>
+      </div>
+    </div>
+
+    <div class="cal-grid" id="calGrid"></div>
+
+    <div class="legend">
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(0,229,195,0.5)"></div>Ganancia alta</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(0,229,195,0.2)"></div>Ganancia baja</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,77,109,0.5)"></div>Pérdida alta</div>
+      <div class="legend-item"><div class="legend-dot" style="background:rgba(255,77,109,0.2)"></div>Pérdida baja</div>
+    </div>
+
+    <!-- BALANCE -->
+    <div class="section-title">Balance & Evolución</div>
+    <div class="balance-card">
+      <div class="balance-top">
+        <div class="balance-main">
+          <div class="label">Balance Actual</div>
+          <div class="value" id="balanceValue">$0.00</div>
+        </div>
+        <div class="balance-metrics">
+          <div class="bm">
+            <div class="label">Inicial</div>
+            <div class="value" id="balanceInitial" style="color:var(--text);">$0.00</div>
+          </div>
+          <div class="bm">
+            <div class="label">Rentabilidad</div>
+            <div class="value" id="balanceRoi">0%</div>
+          </div>
+        </div>
+      </div>
+      <div style="display:flex;gap:10px;margin-bottom:12px;flex-wrap:wrap;">
+        <input type="number" id="initialBalanceInput" placeholder="Balance inicial ($)" class="tx-input" style="flex:1;min-width:150px;">
+        <button class="btn-sm btn-primary" style="padding:10px 16px;" onclick="setInitialBalance()">Establecer</button>
+      </div>
+      <div class="balance-chart-wrap">
+        <canvas id="balanceChart"></canvas>
+      </div>
+    </div>
+
+    <!-- DRAWDOWN -->
+    <div class="drawdown-card">
+      <div class="dd-header">
+        <span class="dd-title">📉 Drawdown desde Máximo</span>
+        <div>
+          <div class="dd-value red" id="ddValue">0.00%</div>
+          <div style="font-size:11px;color:var(--text3);text-align:right;" id="ddDetail">Pico: $0 | Actual: $0</div>
+        </div>
+      </div>
+      <div class="dd-bar-wrap"><div class="dd-bar" id="ddBar" style="width:0%"></div></div>
+    </div>
+
+    <!-- TRANSACTIONS -->
+    <div class="section-title">Depósitos & Retiros</div>
+    <div class="tx-grid">
+      <div class="tx-card">
+        <h3 class="dep">⬇ Depósitos</h3>
+        <div class="tx-form">
+          <input type="number" class="tx-input" id="depAmount" placeholder="Cantidad ($)">
+          <input type="date" class="tx-input" id="depDate">
+          <input type="text" class="tx-input" id="depNote" placeholder="Nota (opcional)">
+          <button class="btn-tx btn-dep" onclick="addDeposit()">+ Añadir Depósito</button>
+        </div>
+        <div class="tx-history" id="depHistory"></div>
+      </div>
+      <div class="tx-card">
+        <h3 class="wit">⬆ Retiros</h3>
+        <div class="tx-form">
+          <input type="number" class="tx-input" id="witAmount" placeholder="Cantidad ($)">
+          <input type="number" class="tx-input" id="witCommission" placeholder="Comisión ($)">
+          <input type="date" class="tx-input" id="witDate">
+          <input type="text" class="tx-input" id="witNote" placeholder="Nota (opcional)">
+          <button class="btn-tx btn-wit" onclick="addWithdrawal()">+ Añadir Retiro</button>
+        </div>
+        <div class="tx-history" id="witHistory"></div>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<!-- ══ DAY MODAL ══ -->
+<div class="modal-overlay" id="dayModal" style="display:none;" onclick="closeDayModal(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2 id="modalTitle">13 Mayo 2026</h2>
+      <button class="modal-close" onclick="closeDayModal(null)">✕</button>
+    </div>
+    <div class="modal-pnl" id="modalPnl">+$0.00</div>
+    <div class="modal-stats">
+      <div class="modal-stat">
+        <div class="ms-label">Trades</div>
+        <div class="ms-value" id="modalTrades">0</div>
+      </div>
+      <div class="modal-stat">
+        <div class="ms-label">Win Rate</div>
+        <div class="ms-value" id="modalWinRate">0%</div>
+      </div>
+      <div class="modal-stat">
+        <div class="ms-label">Mejor</div>
+        <div class="ms-value green" id="modalBest">$0.00</div>
+      </div>
+      <div class="modal-stat">
+        <div class="ms-label">Peor</div>
+        <div class="ms-value red" id="modalWorst">$0.00</div>
+      </div>
+    </div>
+
+    <div style="font-size:12px;font-weight:700;letter-spacing:1px;color:var(--text2);text-transform:uppercase;margin-bottom:12px;">+ Añadir Trade</div>
+    <div class="trade-form">
+      <div class="form-group">
+        <label>Par</label>
+        <select id="tradePair">
+          <option value="BTC-USDC">BTC-USDC</option>
+          <option value="ETH-USDC">ETH-USDC</option>
+          <option value="XAUT-USDC">XAUT-USDC</option>
+          <option value="HYPE-USDC">HYPE-USDC</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Dirección</label>
+        <select id="tradeDir">
+          <option value="LONG">LONG</option>
+          <option value="SHORT">SHORT</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>PNL ($)</label>
+        <input type="number" id="tradePnl" placeholder="ej: 250.50">
+      </div>
+      <div class="form-group">
+        <label>Tamaño (Sz)</label>
+        <input type="number" id="tradeSize" placeholder="ej: 1.25" step="0.0001">
+      </div>
+      <div class="form-group">
+        <label>Hora</label>
+        <input type="time" id="tradeTime">
+      </div>
+      <div class="form-group">
+        <label>Apalancamiento</label>
+        <input type="number" id="tradeLeverage" placeholder="ej: 10">
+      </div>
+    </div>
+    <button class="btn-add-trade" onclick="addTrade()">＋ Registrar Trade</button>
+    <div class="trades-list" id="tradesList"></div>
+  </div>
+</div>
+
+<!-- ══ SETTINGS MODAL ══ -->
+<div class="modal-overlay" id="settingsModal" style="display:none;" onclick="closeSettings(event)">
+  <div class="modal">
+    <div class="modal-header">
+      <h2>⚙ Configuración EmailJS</h2>
+      <button class="modal-close" onclick="closeSettings(null)">✕</button>
+    </div>
+    <div class="settings-row">
+      <label>Service ID</label>
+      <input type="text" id="cfgService" placeholder="service_xxxxxxx">
+    </div>
+    <div class="settings-row">
+      <label>Template ID</label>
+      <input type="text" id="cfgTemplate" placeholder="template_xxxxxxx">
+    </div>
+    <div class="settings-row">
+      <label>Public Key</label>
+      <input type="text" id="cfgPublicKey" placeholder="tu_public_key">
+    </div>
+    <button class="btn-primary" onclick="saveSettings()">Guardar configuración</button>
+    <div style="margin-top:16px;padding:14px;background:var(--bg3);border-radius:10px;font-size:11px;color:var(--text2);line-height:1.7;">
+      <b style="color:var(--accent);">¿Cómo configurar EmailJS?</b><br>
+      1. Crea cuenta gratis en <b>emailjs.com</b><br>
+      2. Crea un Email Service (Gmail)<br>
+      3. Crea un Template con variables <b>{{to_email}}</b> y <b>{{code}}</b><br>
+      4. Copia tu Service ID, Template ID y Public Key aquí<br>
+      5. Límite gratis: 200 emails/mes
+    </div>
+  </div>
+</div>
+
+<!-- ══ TOAST ══ -->
+<div id="toast"></div>
+
+<script>
+// ═══════════════════════════════════════════════
+// STATE
+// ═══════════════════════════════════════════════
+let currentUser = null;
+let verifyCode_val = '';
+let currentYear = 2026;
+let currentMonth = 4; // 0-indexed, 4 = Mayo
+let activeDayKey = null;
+let balanceChartInstance = null;
+
+// ═══════════════════════════════════════════════
+// STORAGE HELPERS
+// ═══════════════════════════════════════════════
+function getStore(key, def = null) {
+  try { const v = localStorage.getItem(key); return v ? JSON.parse(v) : def; } catch { return def; }
+}
+function setStore(key, val) {
+  try { localStorage.setItem(key, JSON.stringify(val)); } catch {}
+}
+function userKey(sub) { return `ltc_${currentUser}_${sub}`; }
+
+// ═══════════════════════════════════════════════
+// EMAILJS CONFIG
+// ═══════════════════════════════════════════════
+function getEJSConfig() {
+  return getStore('ltc_emailjs', { service:'', template:'', publicKey:'' });
+}
+function saveSettings() {
+  const cfg = {
+    service: document.getElementById('cfgService').value.trim(),
+    template: document.getElementById('cfgTemplate').value.trim(),
+    publicKey: document.getElementById('cfgPublicKey').value.trim()
+  };
+  setStore('ltc_emailjs', cfg);
+  toast('✅ Configuración guardada');
+  closeSettings(null);
+}
+function openSettings() {
+  const cfg = getEJSConfig();
+  document.getElementById('cfgService').value = cfg.service;
+  document.getElementById('cfgTemplate').value = cfg.template;
+  document.getElementById('cfgPublicKey').value = cfg.publicKey;
+  document.getElementById('settingsModal').style.display = 'flex';
+}
+function closeSettings(e) {
+  if (!e || e.target === document.getElementById('settingsModal')) {
+    document.getElementById('settingsModal').style.display = 'none';
+  }
+}
+
+// ═══════════════════════════════════════════════
+// AUTH
+// ═══════════════════════════════════════════════
+function sendCode() {
+  const email = document.getElementById('loginEmail').value.trim();
+  const svc   = document.getElementById('ejsService').value.trim();
+  const tmpl  = document.getElementById('ejsTemplate').value.trim();
+  const pk    = document.getElementById('ejsPublicKey').value.trim();
+  const err   = document.getElementById('loginError');
+  err.textContent = '';
+
+  if (!email || !email.includes('@')) { err.textContent = '⚠ Introduce un email válido'; return; }
+
+  // Always save whatever is typed in the fields
+  if (svc || tmpl || pk) setStore('ltc_emailjs', { service:svc, template:tmpl, publicKey:pk });
+
+  const cfg = getEJSConfig();
+
+  if (!cfg.service || !cfg.template || !cfg.publicKey) {
+    // Demo mode: show code in alert
+    verifyCode_val = Math.floor(100000 + Math.random() * 900000).toString();
+    alert(`[MODO DEMO - sin EmailJS configurado]\nTu código es: ${verifyCode_val}`);
+    document.getElementById('codeEmail').textContent = email;
+    document.getElementById('stepEmail').style.display = 'none';
+    document.getElementById('stepCode').style.display = 'block';
+    return;
+  }
+
+  verifyCode_val = Math.floor(100000 + Math.random() * 900000).toString();
+  try {
+    emailjs.init({ publicKey: cfg.publicKey });
+    emailjs.send(cfg.service, cfg.template, { to_email: email, code: verifyCode_val })
+      .then(() => {
+        document.getElementById('codeEmail').textContent = email;
+        document.getElementById('stepEmail').style.display = 'none';
+        document.getElementById('stepCode').style.display = 'block';
+      })
+      .catch(e => {
+        console.error('EmailJS error:', e);
+        const msg = e && e.text ? e.text : (e && e.status ? 'Status '+e.status : (e && e.message ? e.message : JSON.stringify(e)));
+        err.textContent = '⚠ Error EmailJS: ' + msg + ' — Revisa que el campo To Email del template sea {{to_email}}';
+      });
+  } catch(e) {
+    err.textContent = '⚠ Error al inicializar EmailJS: ' + e.message;
+  }
+}
+
+function resendCode() { sendCode(); }
+
+function moveToNext(el, idx) {
+  el.value = el.value.replace(/[^0-9]/g,'');
+  if (el.value && idx < 5) {
+    document.querySelectorAll('.code-digit')[idx+1].focus();
+  }
+}
+function moveToPrev(e, el) {
+  if (e.key === 'Backspace' && !el.value) {
+    const digits = document.querySelectorAll('.code-digit');
+    const idx = Array.from(digits).indexOf(el);
+    if (idx > 0) digits[idx-1].focus();
+  }
+}
+
+function verifyCode() {
+  const digits = document.querySelectorAll('.code-digit');
+  const entered = Array.from(digits).map(d=>d.value).join('');
+  const err = document.getElementById('loginError2');
+  if (entered === verifyCode_val) {
+    currentUser = document.getElementById('loginEmail').value.trim();
+    setStore('ltc_session', currentUser);
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('headerEmail').textContent = currentUser;
+    loadApp();
+  } else {
+    err.textContent = '⚠ Código incorrecto';
+    digits.forEach(d => { d.style.borderColor='var(--red)'; });
+    setTimeout(() => digits.forEach(d => { d.style.borderColor='var(--border)'; }), 1500);
+  }
+}
+
+function logout() {
+  if (!confirm('¿Cerrar sesión?')) return;
+  setStore('ltc_session', null);
+  currentUser = null;
+  location.reload();
+}
+
+function resetAllData() {
+  if (!confirm('⚠ ¿Borrar TODOS tus datos (trades, balance, depósitos, retiros)?\nEsta acción no se puede deshacer.')) return;
+  const keysToDelete = [];
+  for (let i = 0; i < localStorage.length; i++) {
+    const k = localStorage.key(i);
+    if (k && k.startsWith('ltc_' + currentUser + '_')) keysToDelete.push(k);
+  }
+  // También borrar el flag de primer login para que vuelva a limpiar
+  localStorage.removeItem('ltc_firstlogin_' + currentUser);
+  keysToDelete.forEach(k => localStorage.removeItem(k));
+  renderCalendar(); renderStats(); renderBalance(); renderTransactions();
+  toast('🗑 Todos los datos eliminados');
+}
+
+// ═══════════════════════════════════════════════
+// CHECK SESSION
+// ═══════════════════════════════════════════════
+window.addEventListener('load', () => {
+  const saved = getStore('ltc_session');
+  if (saved) {
+    currentUser = saved;
+    document.getElementById('loginScreen').style.display = 'none';
+    document.getElementById('app').style.display = 'block';
+    document.getElementById('headerEmail').textContent = currentUser;
+    loadApp();
+  }
+  // set today as default date for transactions
+  const today = new Date().toISOString().split('T')[0];
+  document.getElementById('depDate').value = today;
+  document.getElementById('witDate').value = today;
+});
+
+// ═══════════════════════════════════════════════
+// LOAD APP
+// ═══════════════════════════════════════════════
+function loadApp() {
+  // Si es primera vez que este email inicia sesión, limpiar cualquier dato residual
+  const firstKey = 'ltc_firstlogin_' + currentUser;
+  if (!localStorage.getItem(firstKey)) {
+    // Borrar todos los datos de este usuario para garantizar inicio limpio
+    const keysToDelete = [];
+    for (let i = 0; i < localStorage.length; i++) {
+      const k = localStorage.key(i);
+      if (k && k.startsWith('ltc_' + currentUser + '_')) keysToDelete.push(k);
+    }
+    keysToDelete.forEach(k => localStorage.removeItem(k));
+    localStorage.setItem(firstKey, '1');
+  }
+  renderCalendar();
+  renderStats();
+  renderBalance();
+  renderTransactions();
+}
+
+// ═══════════════════════════════════════════════
+// SAMPLE DATA (Mayo 2026) — solo para cuentas demo internas
+// ═══════════════════════════════════════════════
+function loadSampleData() {
+  // Cuenta nueva → todo en cero, sin datos precargados
+  return;
+
+  const sample = {
+    '2026-05-02': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:1580.40, size:0.45,  time:'09:15', leverage:10},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:420.88,  size:2.10,  time:'11:30', leverage:8},
+      {pair:'BTC-USDC', dir:'LONG',  pnl:246.98,  size:0.30,  time:'14:00', leverage:10},
+    ],
+    '2026-05-04': [
+      {pair:'HYPE-USDC',dir:'LONG',  pnl:310.75,  size:150.0, time:'10:00', leverage:5},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:-56.20,  size:1.80,  time:'13:45', leverage:8},
+      {pair:'BTC-USDC', dir:'LONG',  pnl:206.21,  size:0.22,  time:'16:00', leverage:10},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:-254.75, size:0.80,  time:'17:20', leverage:5},
+    ],
+    '2026-05-06': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:490.50,  size:0.38,  time:'09:30', leverage:10},
+      {pair:'HYPE-USDC',dir:'SHORT', pnl:135.41,  size:200.0, time:'12:00', leverage:5},
+    ],
+    '2026-05-07': [
+      {pair:'ETH-USDC', dir:'LONG',  pnl:-200.74, size:1.90,  time:'10:15', leverage:8},
+      {pair:'BTC-USDC', dir:'SHORT', pnl:-245.30, size:0.28,  time:'15:00', leverage:10},
+    ],
+    '2026-05-08': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:280.14,  size:0.35,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:-180.50, size:2.00,  time:'11:30', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:52.00,   size:0.90,  time:'14:45', leverage:5},
+      {pair:'HYPE-USDC',dir:'LONG',  pnl:90.50,   size:180.0, time:'16:30', leverage:5},
+    ],
+    '2026-05-09': [
+      {pair:'BTC-USDC', dir:'SHORT', pnl:-850.20, size:0.55,  time:'10:00', leverage:10},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:-429.42, size:2.50,  time:'13:00', leverage:8},
+    ],
+    '2026-05-11': [
+      {pair:'HYPE-USDC',dir:'LONG',  pnl:140.74,  size:160.0, time:'11:00', leverage:5},
+    ],
+    '2026-05-13': [
+      {pair:'BTC-USDC', dir:'SHORT', pnl:579.10,  size:1.6226, time:'10:26', leverage:10},
+      {pair:'BTC-USDC', dir:'SHORT', pnl:577.94,  size:1.9573, time:'12:23', leverage:10},
+      {pair:'BTC-USDC', dir:'SHORT', pnl:-559.31, size:1.2705, time:'17:39', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:770.54,  size:1.3064, time:'09:25', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:187.77,  size:0.9379, time:'18:43', leverage:5},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:-577.83, size:1.6811, time:'19:31', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:-300.24, size:0.0106, time:'18:53', leverage:5},
+    ],
+    '2026-05-15': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:280.00,  size:0.40,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:95.50,   size:1.70,  time:'11:00', leverage:8},
+      {pair:'BTC-USDC', dir:'SHORT', pnl:35.47,   size:0.30,  time:'14:00', leverage:10},
+    ],
+    '2026-05-16': [
+      {pair:'HYPE-USDC',dir:'LONG',  pnl:248.00,  size:190.0, time:'10:00', leverage:5},
+    ],
+    '2026-05-19': [
+      {pair:'ETH-USDC', dir:'SHORT', pnl:-232.95, size:2.10,  time:'11:30', leverage:8},
+    ],
+    '2026-05-20': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:520.00,  size:0.42,  time:'09:30', leverage:10},
+      {pair:'XAUT-USDC',dir:'LONG',  pnl:261.46,  size:1.00,  time:'13:00', leverage:5},
+    ],
+    '2026-05-21': [
+      {pair:'BTC-USDC', dir:'SHORT', pnl:200.00,  size:0.35,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:180.50,  size:1.80,  time:'11:00', leverage:8},
+      {pair:'HYPE-USDC',dir:'SHORT', pnl:95.00,   size:170.0, time:'13:30', leverage:5},
+      {pair:'BTC-USDC', dir:'LONG',  pnl:117.53,  size:0.28,  time:'15:00', leverage:10},
+    ],
+    '2026-05-22': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:950.00,  size:0.60,  time:'09:15', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:420.82,  size:2.20,  time:'11:30', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:310.00,  size:1.10,  time:'14:00', leverage:5},
+      {pair:'HYPE-USDC',dir:'LONG',  pnl:248.00,  size:200.0, time:'16:00', leverage:5},
+    ],
+    '2026-05-23': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:112.00,  size:0.25,  time:'10:00', leverage:10},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:45.50,   size:1.60,  time:'12:00', leverage:8},
+    ],
+    '2026-05-25': [
+      {pair:'ETH-USDC', dir:'SHORT', pnl:-152.18, size:1.90,  time:'10:30', leverage:8},
+    ],
+    '2026-05-26': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:750.00,  size:0.50,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:180.00,  size:2.00,  time:'11:00', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:75.75,   size:0.95,  time:'14:00', leverage:5},
+    ],
+    '2026-05-27': [
+      {pair:'BTC-USDC', dir:'SHORT', pnl:90.00,   size:0.32,  time:'09:30', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:93.82,   size:1.75,  time:'12:00', leverage:8},
+    ],
+    '2026-05-28': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:120.00,  size:0.38,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'SHORT', pnl:45.29,   size:1.80,  time:'11:00', leverage:8},
+    ],
+    '2026-05-29': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:550.00,  size:0.48,  time:'09:00', leverage:10},
+      {pair:'ETH-USDC', dir:'LONG',  pnl:200.00,  size:2.10,  time:'11:30', leverage:8},
+      {pair:'XAUT-USDC',dir:'SHORT', pnl:121.62,  size:1.00,  time:'14:00', leverage:5},
+    ],
+    '2026-05-30': [
+      {pair:'BTC-USDC', dir:'LONG',  pnl:215.00,  size:0.30,  time:'10:00', leverage:10},
+    ],
+  };
+  setStore(key, sample);
+
+  // Sample initial balance
+  if (!getStore(userKey('initialBalance'))) {
+    setStore(userKey('initialBalance'), 10000);
+  }
+  // Sample deposit
+  if (!getStore(userKey('deposits'))) {
+    setStore(userKey('deposits'), [
+      { amount:10000, date:'2026-05-01', note:'Capital inicial' }
+    ]);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// GET TRADES FOR DATE
+// ═══════════════════════════════════════════════
+function getTrades() { return getStore(userKey('trades'), {}); }
+function saveTrades(t) { setStore(userKey('trades'), t); }
+
+function getDayPnl(dateStr) {
+  const trades = getTrades()[dateStr] || [];
+  return trades.reduce((s, t) => s + t.pnl, 0);
+}
+
+// ═══════════════════════════════════════════════
+// RENDER CALENDAR
+// ═══════════════════════════════════════════════
+const MONTHS = ['Enero','Febrero','Marzo','Abril','Mayo','Junio','Julio','Agosto','Septiembre','Octubre','Noviembre','Diciembre'];
+const DAYS_H = ['LUN','MAR','MIÉ','JUE','VIE','SÁB','DOM'];
+
+function changeMonth(dir) {
+  currentMonth += dir;
+  if (currentMonth < 0) { currentMonth = 11; currentYear--; }
+  if (currentMonth > 11) { currentMonth = 0; currentYear++; }
+  renderCalendar();
+  renderStats();
+}
+
+function renderCalendar() {
+  const grid = document.getElementById('calGrid');
+  document.getElementById('calTitle').textContent = `${MONTHS[currentMonth]} ${currentYear}`;
+  grid.innerHTML = '';
+
+  DAYS_H.forEach(d => {
+    const h = document.createElement('div');
+    h.className = 'cal-header-cell'; h.textContent = d;
+    grid.appendChild(h);
+  });
+
+  const firstDay = new Date(currentYear, currentMonth, 1).getDay();
+  const daysInMonth = new Date(currentYear, currentMonth+1, 0).getDate();
+  const offset = (firstDay + 6) % 7; // Mon=0
+
+  for (let i = 0; i < offset; i++) {
+    const e = document.createElement('div'); e.className = 'cal-cell empty';
+    grid.appendChild(e);
+  }
+
+  const today = new Date();
+  const allPnls = [];
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const pnl = getDayPnl(dateStr);
+    if (pnl !== 0) allPnls.push(Math.abs(pnl));
+  }
+  const maxPnl = allPnls.length ? Math.max(...allPnls) : 1;
+
+  for (let d = 1; d <= daysInMonth; d++) {
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const trades = getTrades()[dateStr] || [];
+    const pnl = trades.reduce((s,t)=>s+t.pnl,0);
+    const cell = document.createElement('div');
+    cell.className = 'cal-cell';
+
+    const isToday = today.getFullYear()===currentYear && today.getMonth()===currentMonth && today.getDate()===d;
+    if (isToday) cell.classList.add('today');
+
+    if (pnl !== 0) {
+      const ratio = Math.abs(pnl) / maxPnl;
+      if (pnl > 0) cell.classList.add(ratio >= 0.5 ? 'gain-high' : 'gain-low');
+      else          cell.classList.add(ratio >= 0.5 ? 'loss-high' : 'loss-low');
+    }
+
+    cell.innerHTML = `
+      <div class="cell-day">${d}</div>
+      ${trades.length ? `
+        <div class="cell-pnl ${pnl>=0?'green':'red'}">${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(2)}</div>
+        <div class="cell-trades">${trades.length}t</div>
+      ` : ''}
+    `;
+    cell.onclick = () => openDay(dateStr, d);
+    grid.appendChild(cell);
+  }
+}
+
+// ═══════════════════════════════════════════════
+// RENDER STATS
+// ═══════════════════════════════════════════════
+function renderStats() {
+  const trades = getTrades();
+  let totalPnl = 0, winDays = 0, activeDays = 0;
+  for (let d = 1; d <= 31; d++) {
+    const dateStr = `${currentYear}-${String(currentMonth+1).padStart(2,'0')}-${String(d).padStart(2,'0')}`;
+    const t = trades[dateStr];
+    if (!t || !t.length) continue;
+    const pnl = t.reduce((s,x)=>s+x.pnl,0);
+    totalPnl += pnl; activeDays++;
+    if (pnl > 0) winDays++;
+  }
+  const wr = activeDays ? Math.round((winDays/activeDays)*100) : 0;
+  const pnlEl = document.getElementById('statPnl');
+  pnlEl.textContent = `${totalPnl>=0?'+':''}\$${Math.abs(totalPnl).toFixed(2)}`;
+  pnlEl.className = 'stat-value ' + (totalPnl>=0?'green':'red');
+  document.getElementById('statDays').textContent = `${activeDays} días con actividad`;
+  const wrEl = document.getElementById('statWinRate');
+  wrEl.textContent = `${wr}%`;
+  wrEl.className = 'stat-value ' + (wr>=50?'green':'red');
+  document.getElementById('statWinDays').textContent = `${winDays} de ${activeDays} días`;
+}
+
+// ═══════════════════════════════════════════════
+// BALANCE
+// ═══════════════════════════════════════════════
+function setInitialBalance() {
+  const v = parseFloat(document.getElementById('initialBalanceInput').value);
+  if (isNaN(v) || v <= 0) { toast('⚠ Introduce un balance válido'); return; }
+  setStore(userKey('initialBalance'), v);
+  renderBalance();
+  toast('✅ Balance inicial establecido');
+}
+
+function calcDailyBalances() {
+  const initial = getStore(userKey('initialBalance'), 0);
+  const deposits = getStore(userKey('deposits'), []);
+  const withdrawals = getStore(userKey('withdrawals'), []);
+  const trades = getTrades();
+
+  // Build sorted date list
+  const dateSet = new Set();
+  Object.keys(trades).forEach(d => dateSet.add(d));
+  deposits.forEach(d => dateSet.add(d.date));
+  withdrawals.forEach(d => dateSet.add(d.date));
+  const dates = Array.from(dateSet).sort();
+
+  let balance = initial;
+  const balances = [{ date:'Inicio', value: initial }];
+
+  dates.forEach(date => {
+    const dep = deposits.filter(d => d.date === date).reduce((s,d)=>s+d.amount,0);
+    const wit = withdrawals.filter(d => d.date === date).reduce((s,d)=>s+(d.amount+d.commission),0);
+    const pnl = (trades[date]||[]).reduce((s,t)=>s+t.pnl,0);
+    balance += dep - wit + pnl;
+    balances.push({ date: date.slice(5), value: balance });
+  });
+  return { balances, current: balance, initial };
+}
+
+function renderBalance() {
+  const { balances, current, initial } = calcDailyBalances();
+  document.getElementById('balanceValue').textContent = `\$${current.toFixed(2)}`;
+  document.getElementById('balanceInitial').textContent = `\$${initial.toFixed(2)}`;
+  const roi = initial ? (((current - initial) / initial) * 100) : 0;
+  const roiEl = document.getElementById('balanceRoi');
+  roiEl.textContent = `${roi>=0?'+':''}${roi.toFixed(2)}%`;
+  roiEl.style.color = roi>=0?'var(--green)':'var(--red)';
+
+  // Chart
+  const ctx = document.getElementById('balanceChart').getContext('2d');
+  if (balanceChartInstance) balanceChartInstance.destroy();
+  balanceChartInstance = new Chart(ctx, {
+    type:'line',
+    data: {
+      labels: balances.map(b=>b.date),
+      datasets:[{
+        data: balances.map(b=>b.value),
+        borderColor:'#00e5c3', borderWidth:2,
+        pointBackgroundColor:'#00e5c3', pointRadius:3,
+        fill:true,
+        backgroundColor:(ctx2)=>{
+          const g = ctx2.chart.ctx.createLinearGradient(0,0,0,120);
+          g.addColorStop(0,'rgba(0,229,195,0.25)');
+          g.addColorStop(1,'rgba(0,229,195,0)');
+          return g;
+        },
+        tension:0.4
+      }]
+    },
+    options:{
+      responsive:true, maintainAspectRatio:false,
+      plugins:{ legend:{display:false} },
+      scales:{
+        x:{ ticks:{ color:'#5a6478', font:{size:9} }, grid:{color:'rgba(255,255,255,0.05)'} },
+        y:{ ticks:{ color:'#5a6478', font:{size:9}, callback:v=>'$'+v.toLocaleString() }, grid:{color:'rgba(255,255,255,0.05)'} }
+      }
+    }
+  });
+
+  // Drawdown
+  let peak = 0, maxDD = 0;
+  balances.forEach(b => {
+    if (b.value > peak) peak = b.value;
+    const dd = peak > 0 ? ((peak - b.value) / peak) * 100 : 0;
+    if (dd > maxDD) maxDD = dd;
+  });
+  const currentDD = peak > 0 ? ((peak - current) / peak) * 100 : 0;
+  document.getElementById('ddValue').textContent = `-${currentDD.toFixed(2)}%`;
+  document.getElementById('ddDetail').textContent = `Pico: $${peak.toFixed(2)} | Actual: $${current.toFixed(2)}`;
+  const barPct = Math.min(currentDD, 100);
+  document.getElementById('ddBar').style.width = barPct + '%';
+}
+
+// ═══════════════════════════════════════════════
+// DEPOSITS & WITHDRAWALS
+// ═══════════════════════════════════════════════
+function addDeposit() {
+  const amount = parseFloat(document.getElementById('depAmount').value);
+  const date = document.getElementById('depDate').value;
+  const note = document.getElementById('depNote').value;
+  if (isNaN(amount) || amount <= 0 || !date) { toast('⚠ Rellena cantidad y fecha'); return; }
+  const deps = getStore(userKey('deposits'), []);
+  deps.push({ amount, date, note });
+  setStore(userKey('deposits'), deps);
+  document.getElementById('depAmount').value = '';
+  document.getElementById('depNote').value = '';
+  renderTransactions(); renderBalance(); renderStats(); toast('✅ Depósito añadido');
+}
+
+function addWithdrawal() {
+  const amount = parseFloat(document.getElementById('witAmount').value);
+  const commission = parseFloat(document.getElementById('witCommission').value) || 0;
+  const date = document.getElementById('witDate').value;
+  const note = document.getElementById('witNote').value;
+  if (isNaN(amount) || amount <= 0 || !date) { toast('⚠ Rellena cantidad y fecha'); return; }
+  const wits = getStore(userKey('withdrawals'), []);
+  wits.push({ amount, commission, date, note });
+  setStore(userKey('withdrawals'), wits);
+  document.getElementById('witAmount').value = '';
+  document.getElementById('witCommission').value = '';
+  document.getElementById('witNote').value = '';
+  renderTransactions(); renderBalance(); toast('✅ Retiro añadido');
+}
+
+function renderTransactions() {
+  const deps = getStore(userKey('deposits'), []).slice().reverse();
+  const wits = getStore(userKey('withdrawals'), []).slice().reverse();
+
+  document.getElementById('depHistory').innerHTML = deps.map((d,i)=>`
+    <div class="tx-item">
+      <div>
+        <div class="tx-date">${d.date}</div>
+        ${d.note ? `<div style="font-size:10px;color:var(--text3);">${d.note}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div class="tx-amount green">+\$${d.amount.toFixed(2)}</div>
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">Sin depósitos</div>';
+
+  document.getElementById('witHistory').innerHTML = wits.map((w,i)=>`
+    <div class="tx-item">
+      <div>
+        <div class="tx-date">${w.date}</div>
+        ${w.note ? `<div style="font-size:10px;color:var(--text3);">${w.note}</div>` : ''}
+        ${w.commission > 0 ? `<div class="tx-commission">Comisión: \$${w.commission.toFixed(2)}</div>` : ''}
+      </div>
+      <div style="text-align:right;">
+        <div class="tx-amount red">-\$${w.amount.toFixed(2)}</div>
+        ${w.commission > 0 ? `<div style="font-size:10px;color:var(--text3);">Total: -\$${(w.amount+w.commission).toFixed(2)}</div>` : ''}
+      </div>
+    </div>
+  `).join('') || '<div style="color:var(--text3);font-size:12px;text-align:center;padding:12px;">Sin retiros</div>';
+}
+
+// ═══════════════════════════════════════════════
+// DAY MODAL
+// ═══════════════════════════════════════════════
+function openDay(dateStr, dayNum) {
+  activeDayKey = dateStr;
+  const [y,m,d] = dateStr.split('-');
+  document.getElementById('modalTitle').textContent = `${dayNum} ${MONTHS[parseInt(m)-1]} ${y}`;
+  renderModalStats();
+  document.getElementById('dayModal').style.display = 'flex';
+  const now = new Date();
+  document.getElementById('tradeTime').value = `${String(now.getHours()).padStart(2,'0')}:${String(now.getMinutes()).padStart(2,'0')}`;
+}
+
+function renderModalStats() {
+  const trades = getTrades()[activeDayKey] || [];
+  const pnl = trades.reduce((s,t)=>s+t.pnl,0);
+  const wins = trades.filter(t=>t.pnl>0).length;
+  const wr = trades.length ? Math.round((wins/trades.length)*100) : 0;
+  const pnls = trades.map(t=>t.pnl);
+  const best = pnls.length ? Math.max(...pnls) : 0;
+  const worst = pnls.length ? Math.min(...pnls) : 0;
+
+  const pnlEl = document.getElementById('modalPnl');
+  pnlEl.textContent = `${pnl>=0?'+':''}$${Math.abs(pnl).toFixed(2)}`;
+  pnlEl.className = 'modal-pnl ' + (pnl>=0?'green':'red');
+  document.getElementById('modalTrades').textContent = trades.length;
+  document.getElementById('modalWinRate').textContent = wr + '%';
+  document.getElementById('modalBest').textContent = best>=0?'+$'+best.toFixed(2):'$'+best.toFixed(2);
+  document.getElementById('modalWorst').textContent = worst>=0?'+$'+worst.toFixed(2):'$'+worst.toFixed(2);
+
+  document.getElementById('tradesList').innerHTML = trades.map((t,i) => `
+    <div class="trade-item">
+      <div class="trade-left">
+        <div class="pair">${t.pair}</div>
+        <div class="dir ${t.dir.toLowerCase()}">${t.dir}</div>
+      </div>
+      <div class="trade-right">
+        <div class="pnl ${t.pnl>=0?'green':'red'}">${t.pnl>=0?'+':''}$${Math.abs(t.pnl).toFixed(2)}</div>
+        <div class="meta">Sz:${t.size} ${t.time}${t.leverage?(' x'+t.leverage):''}</div>
+      </div>
+      <button class="btn-del-trade" onclick="deleteTrade(${i})">✕</button>
+    </div>
+  `).join('');
+}
+
+function addTrade() {
+  const pair = document.getElementById('tradePair').value;
+  const dir  = document.getElementById('tradeDir').value;
+  const pnl  = parseFloat(document.getElementById('tradePnl').value);
+  const size = parseFloat(document.getElementById('tradeSize').value) || 0;
+  const time = document.getElementById('tradeTime').value;
+  const leverage = parseInt(document.getElementById('tradeLeverage').value) || 0;
+
+  if (isNaN(pnl)) { toast('⚠ Introduce el PNL'); return; }
+
+  const all = getTrades();
+  if (!all[activeDayKey]) all[activeDayKey] = [];
+  all[activeDayKey].push({ pair, dir, pnl, size, time, leverage });
+  saveTrades(all);
+
+  document.getElementById('tradePnl').value = '';
+  document.getElementById('tradeSize').value = '';
+  renderModalStats(); renderCalendar(); renderStats(); renderBalance();
+  toast('✅ Trade registrado');
+}
+
+function deleteTrade(idx) {
+  const all = getTrades();
+  all[activeDayKey].splice(idx, 1);
+  if (!all[activeDayKey].length) delete all[activeDayKey];
+  saveTrades(all);
+  renderModalStats(); renderCalendar(); renderStats(); renderBalance();
+  toast('🗑 Trade eliminado');
+}
+
+function closeDayModal(e) {
+  if (!e || e.target === document.getElementById('dayModal')) {
+    document.getElementById('dayModal').style.display = 'none';
+    activeDayKey = null;
+  }
+}
+
+// ═══════════════════════════════════════════════
+// TOAST
+// ═══════════════════════════════════════════════
+let toastTimer;
+function toast(msg) {
+  const el = document.getElementById('toast');
+  el.textContent = msg; el.classList.add('show');
+  clearTimeout(toastTimer);
+  toastTimer = setTimeout(() => el.classList.remove('show'), 2500);
+}
+</script>
+</body>
+</html>
